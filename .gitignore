@@ -1,0 +1,25 @@
+# bağımlılıklar ve derleme çıktıları
+node_modules/
+dist/
+src-tauri/target/
+
+# geliştirme sırasında üretilen geçici dosyalar
+tanitim.html
+ayar.html
+
+# tasarım süreci ve kişisel bağlam — depoya girmez
+.impeccable/
+PRODUCT.md
+DURUM.md
+
+# editör/oturum yapılandırması ve başka oturumlardan kalan denemeler
+.claude/
+output/
+
+# işletim sistemi
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Tauri tarafindan uretilen semalar
+src-tauri/gen/schemas/

@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ajanda — verisi sende kalan takvim</title>
+    <meta
+      name="description"
+      content="Windows için kişisel takvim. Takvimini kendi bilgisayarında tutar, Google Takvim ile çift yönlü senkron olur. Türkçe yazarak etkinlik eklersin."
+    />
+    <link rel="icon" href="gorseller/logo.png" />
+    <meta property="og:title" content="Ajanda — verisi sende kalan takvim" />
+    <meta
+      property="og:description"
+      content="Takvimini kendi bilgisayarında tutar, Google Takvim ile çift yönlü senkron olur. “cuma 14:30 vize sınavı 2 saat” yazarsın, olay kurulur."
+    />
+    <meta property="og:image" content="gorseller/hafta-koyu.png" />
+    <meta name="theme-color" content="#141210" />
+
+    <style>
+      /* Uygulamanın kendi görsel sistemi: sıcak koyu rampa, tek sinyal rengi,
+         renk yalnız bilgi taşıdığında. */
+      :root {
+        --zemin: #141210;
+        --panel: #1c1815;
+        --yuzey: #241f1a;
+        --cizgi: rgba(246, 238, 228, 0.075);
+        --cizgi-2: rgba(246, 238, 228, 0.15);
+        --ink: #f3efe9;
+        --ink-2: #a9a29a;
+        --ink-3: #8a8279;
+        --simdi: #ff6a3d;
+        --e: cubic-bezier(0.16, 1, 0.3, 1);
+        color-scheme: dark;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        background: var(--zemin);
+        color: var(--ink);
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a { color: inherit; }
+
+      .sar {
+        width: min(1080px, calc(100% - 48px));
+        margin-inline: auto;
+      }
+
+      /* ---------------------------------------------------------- üst bar */
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: color-mix(in srgb, var(--zemin) 88%, transparent);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--cizgi);
+      }
+      header .sar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 60px;
+      }
+      .marka {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        text-decoration: none;
+      }
+      .marka img { width: 24px; height: 24px; display: block; }
+      header nav {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      header nav a {
+        color: var(--ink-2);
+        text-decoration: none;
+        font-size: 14px;
+        padding: 7px 11px;
+        border-radius: 9px;
+        transition: background 120ms var(--e), color 120ms var(--e);
+      }
+      header nav a:hover { background: var(--yuzey); color: var(--ink); }
+
+      .dg {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        height: 44px;
+        padding: 0 20px;
+        border-radius: 11px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        white-space: nowrap;
+        transition: transform 120ms var(--e), background 120ms var(--e),
+          border-color 120ms var(--e);
+      }
+      .dg.birincil { background: var(--ink); color: var(--zemin); }
+      .dg.birincil:hover { background: #fff; }
+      .dg.ikincil { border: 1px solid var(--cizgi-2); color: var(--ink); }
+      .dg.ikincil:hover { border-color: var(--ink-3); }
+      .dg:active { transform: scale(0.985); }
+      header .dg { height: 34px; padding: 0 14px; font-size: 14px; border-radius: 9px; }
+
+      /* ------------------------------------------------------------ hero */
+
+      .hero { padding: 92px 0 0; text-align: center; }
+      .hero h1 {
+        font-size: clamp(38px, 6.2vw, 66px);
+        line-height: 1.04;
+        letter-spacing: -0.035em;
+        font-weight: 700;
+        margin: 0 0 18px;
+      }
+      /* Ürünün tek iddiası vurguyu alır; başka renkli kelime yok. */
+      .hero h1 em { font-style: normal; color: var(--simdi); }
+      .hero p {
+        font-size: clamp(16px, 2vw, 19px);
+        color: var(--ink-2);
+        max-width: 58ch;
+        margin: 0 auto 30px;
+      }
+      .dg-sira {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .kucuk {
+        font-size: 13.5px;
+        color: var(--ink-3);
+        margin-bottom: 56px;
+      }
+
+      .ekran {
+        border-radius: 16px;
+        border: 1px solid var(--cizgi-2);
+        box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.85),
+          0 8px 24px rgba(0, 0, 0, 0.4);
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      /* --------------------------------------------------------- bölümler */
+
+      section { padding: 100px 0; }
+      section + section { border-top: 1px solid var(--cizgi); }
+
+      h2 {
+        font-size: clamp(26px, 3.4vw, 36px);
+        letter-spacing: -0.028em;
+        line-height: 1.15;
+        margin: 0 0 14px;
+        font-weight: 650;
+      }
+      .aciklama {
+        color: var(--ink-2);
+        max-width: 62ch;
+        margin: 0 0 40px;
+      }
+
+      .ikili {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        gap: 56px;
+        align-items: center;
+      }
+      .ikili.ters > :first-child { order: 2; }
+
+      /* ------------------------------------------------------ dil tablosu */
+
+      table.dil {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14.5px;
+      }
+      table.dil td {
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--cizgi);
+        vertical-align: middle;
+      }
+      table.dil tr:last-child td { border-bottom: 0; }
+      table.dil td:first-child {
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      table.dil td:last-child { color: var(--ink-2); text-align: right; }
+      .ok { color: var(--simdi); padding: 0 6px; }
+
+      /* ------------------------------------------------------- özellikler */
+
+      .ozellikler {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 34px 40px;
+      }
+      .ozellik h3 {
+        font-size: 16px;
+        margin: 0 0 6px;
+        font-weight: 620;
+        letter-spacing: -0.012em;
+      }
+      .ozellik p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+
+      /* ------------------------------------------------------------ adım */
+
+      ol.adimlar { counter-reset: a; list-style: none; padding: 0; margin: 0; max-width: 62ch; }
+      ol.adimlar li {
+        counter-increment: a;
+        position: relative;
+        padding: 0 0 22px 46px;
+        color: var(--ink-2);
+      }
+      ol.adimlar li::before {
+        content: counter(a);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 99px;
+        border: 1px solid var(--cizgi-2);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 650;
+        display: grid;
+        place-items: center;
+      }
+      ol.adimlar li b { color: var(--ink); font-weight: 600; }
+      ol.adimlar li::after {
+        content: "";
+        position: absolute;
+        left: 13.5px;
+        top: 32px;
+        bottom: 6px;
+        width: 1px;
+        background: var(--cizgi);
+      }
+      ol.adimlar li:last-child { padding-bottom: 0; }
+      ol.adimlar li:last-child::after { display: none; }
+
+      code {
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+        font-size: 0.9em;
+        background: var(--yuzey);
+        border: 1px solid var(--cizgi);
+        border-radius: 5px;
+        padding: 1.5px 6px;
+      }
+
+      /* -------------------------------------------------------- kapanış */
+
+      .kapanis { text-align: center; }
+      .kapanis h2 { margin-bottom: 10px; }
+
+      footer {
+        border-top: 1px solid var(--cizgi);
+        padding: 34px 0 44px;
+        color: var(--ink-3);
+        font-size: 13.5px;
+      }
+      footer .sar { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+      footer a { color: var(--ink-2); text-decoration: none; }
+      footer a:hover { color: var(--ink); }
+      footer .bosluk { flex: 1; }
+
+      @media (max-width: 860px) {
+        .ikili { grid-template-columns: 1fr; gap: 30px; }
+        .ikili.ters > :first-child { order: 0; }
+        section { padding: 68px 0; }
+        .hero { padding: 60px 0 0; }
+        header nav a:not(.dg) { display: none; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        * { transition-duration: 0.001ms !important; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <div class="sar">
+        <a class="marka" href="#">
+          <img src="gorseller/marka.png" alt="" />
+          Ajanda
+        </a>
+        <nav>
+          <a href="#hizli">Hızlı ekleme</a>
+          <a href="#gorunumler">Görünümler</a>
+          <a href="#senkron">Senkron</a>
+          <a href="#kurulum">Kurulum</a>
+          <a
+            class="dg birincil"
+            href="https://github.com/berkdemir18/Ajanda/releases/latest"
+            >İndir</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero sar">
+        <h1>Takvimin <em>sende</em> kalsın.<br />Google'la da senkron olsun.</h1>
+        <p>
+          Ajanda etkinliklerini kendi bilgisayarındaki tek bir dosyada tutar ve
+          Google Takvim ile çift yönlü senkronlar. Telefonda eklediğin buraya,
+          burada sürüklediğin oraya gider. İnternet yokken de tam çalışır.
+        </p>
+        <div class="dg-sira">
+          <a
+            class="dg birincil"
+            href="https://github.com/berkdemir18/Ajanda/releases/latest"
+            >Windows için indir</a
+          >
+          <a class="dg ikincil" href="https://github.com/berkdemir18/Ajanda"
+            >Kaynak kodu</a
+          >
+        </div>
+        <p class="kucuk">
+          Windows 10/11 · ücretsiz ve açık kaynak · yönetici yetkisi gerekmez
+        </p>
+        <img
+          class="ekran"
+          src="gorseller/hafta-koyu.png"
+          alt="Ajanda hafta görünümü"
+          width="1440"
+          height="900"
+        />
+      </div>
+
+      <section id="hizli">
+        <div class="sar ikili">
+          <div>
+            <h2>Cümleyi yaz, olay kurulsun</h2>
+            <p class="aciklama">
+              <code>Ctrl+K</code> ile aç, Türkçe yaz, Enter'a bas. Tarihi,
+              saati, süreyi ve tekrarı cümleden çıkarır. Aynı kutu arama da
+              yapar.
+            </p>
+            <table class="dil">
+              <tr>
+                <td>cuma 14:30 vize sınavı 2 saat</td>
+                <td><span class="ok">→</span> Cuma 14:30–16:30</td>
+              </tr>
+              <tr>
+                <td>her salı 18:00 antrenman</td>
+                <td><span class="ok">→</span> haftalık tekrar</td>
+              </tr>
+              <tr>
+                <td>hafta içi 09:00 ders</td>
+                <td><span class="ok">→</span> pazartesi–cuma</td>
+              </tr>
+              <tr>
+                <td>12 eylül doğum günü</td>
+                <td><span class="ok">→</span> tüm gün</td>
+              </tr>
+              <tr>
+                <td>öbür gün akşam maç</td>
+                <td><span class="ok">→</span> 2 gün sonra 20:00</td>
+              </tr>
+            </table>
+          </div>
+          <img
+            class="ekran"
+            src="gorseller/hizli-ekleme.png"
+            alt="Hızlı ekleme paleti"
+            loading="lazy"
+            width="1440"
+            height="900"
+          />
+        </div>
+      </section>
+
+      <section id="gorunumler">
+        <div class="sar ikili ters">
+          <div>
+            <h2>Beş görünüm, tek ritim</h2>
+            <p class="aciklama">
+              Gün, hafta, ay, yıl ve program. Ay görünümünde çok günlü
+              etkinlikler hafta sınırını aşan tek şerit olarak çizilir — gün gün
+              kopmaz. Program görünümü boş günleri atlar.
+            </p>
+            <p class="aciklama">
+              Her takvim kendi rengini gövde, kenar ve başlıkta birden taşır;
+              okul, kişisel ve takip ettiğin takvimler lejant okumadan ayrılır.
+            </p>
+          </div>
+          <img
+            class="ekran"
+            src="gorseller/ay-koyu.png"
+            alt="Ay görünümü"
+            loading="lazy"
+            width="1440"
+            height="900"
+          />
+        </div>
+      </section>
+
+      <section>
+        <div class="sar">
+          <h2>Günlük kullanım için</h2>
+          <p class="aciklama">
+            Uygulama günde birkaç kez, kısa süre açılır. Açıldığı anda “bugün ne
+            var” sorusunu cevaplaması gerekir.
+          </p>
+          <div class="ozellikler">
+            <div class="ozellik">
+              <h3>Sürükleyerek düzenleme</h3>
+              <p>
+                Boş alana sürükleyip oluştur, bloğu taşı, alt kenarından süreyi
+                uzat. 15 dakikalık adımlarla oturur.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>“Şimdi” çizgisi</h3>
+              <p>
+                Saatini kendi taşıyan tek sıcak çizgi. Açılışta bir kez uzayarak
+                gelir; gözün ilk oraya düşer.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Sıradakiler</h3>
+              <p>
+                Kenar rayında bir sonraki beş şey, “14 dk sonra” gibi geri
+                sayımla.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Hatırlatıcılar</h3>
+              <p>
+                Windows bildirimi olarak gelir. Kapatınca uygulama tepsiye iner,
+                hatırlatmalar çalışmaya devam eder.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Tekrarlar</h3>
+              <p>
+                Günlük, haftalık, aylık, yıllık — “ayın 2. salısı” dahil. Google
+                ile aynı kural biçimini kullanır.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Klavye</h3>
+              <p>
+                <code>T</code> bugün, <code>←/→</code> gezinme,
+                <code>N</code> yeni, <code>R</code> senkron,
+                <code>1–5</code> görünüm.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Açık ve koyu tema</h3>
+              <p>
+                İkisi de ayrı ayrı ölçüldü; metin kontrastları erişilebilirlik
+                eşiğinin üstünde.
+              </p>
+            </div>
+            <div class="ozellik">
+              <h3>Çevrimdışı çalışır</h3>
+              <p>
+                Google bağlı olmasa da tam çalışır. Bağlantı gelince bekleyen
+                değişiklikler gönderilir.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="senkron">
+        <div class="sar">
+          <h2>Senkron, aradaki sunucu olmadan</h2>
+          <p class="aciklama">
+            Ajanda kendi Google anahtarıyla gelmez; kendi anahtarını kendin
+            oluşturursun. Böylece takvimin üçüncü bir sunucudan geçmez —
+            uygulama doğrudan senin hesabınla konuşur. Tek seferlik, beş
+            dakikalık bir iş:
+          </p>
+          <ol class="adimlar">
+            <li>
+              <b>Google Cloud Console</b>'da yeni bir proje aç.
+            </li>
+            <li>
+              <b>API'ler ve Hizmetler → Kitaplık</b> yolundan
+              <b>Google Calendar API</b>'yi etkinleştir.
+            </li>
+            <li>
+              <b>OAuth izin ekranı</b>nı <b>Harici</b> seç ve kendi e-postanı
+              test kullanıcısı olarak ekle.
+            </li>
+            <li>
+              <b>Kimlik bilgileri</b> bölümünden tür olarak
+              <b>Masaüstü uygulaması</b> ile bir OAuth istemcisi oluştur.
+            </li>
+            <li>
+              Çıkan iki değeri Ajanda'da <b>Ayarlar → Google Takvim</b> alanlarına
+              yapıştır ve bağlan. Anahtarlar yalnızca senin bilgisayarında durur.
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="kurulum">
+        <div class="sar ikili">
+          <div>
+            <h2>Kurulumu iki adım</h2>
+            <p class="aciklama">
+              Kurulum dosyasını indir, çift tıkla. Yönetici yetkisi istemez,
+              yalnızca kendi kullanıcına kurulur. Masaüstüne ve Başlat menüsüne
+              kısayol düşer.
+            </p>
+            <div class="dg-sira" style="justify-content: flex-start">
+              <a
+                class="dg birincil"
+                href="https://github.com/berkdemir18/Ajanda/releases/latest"
+                >Kurulumu indir</a
+              >
+            </div>
+            <p class="kucuk" style="margin-top: 18px; margin-bottom: 0">
+              Kurulum imzalı olmadığı için Windows SmartScreen uyarı verebilir:
+              <b>Ek bilgi → Yine de çalıştır</b>. Verilerin
+              <code>%APPDATA%\com.berk.ajanda\ajanda.db</code> dosyasında durur;
+              yedeklemek için o dosyayı kopyalaman yeterli.
+            </p>
+          </div>
+          <img
+            class="ekran"
+            src="gorseller/hafta-acik.png"
+            alt="Açık tema"
+            loading="lazy"
+            width="1440"
+            height="900"
+          />
+        </div>
+      </section>
+
+      <section class="kapanis">
+        <div class="sar">
+          <h2>Açık kaynak, MIT</h2>
+          <p class="aciklama" style="margin-inline: auto">
+            Tauri v2 ve TypeScript ile yazıldı; arayüzde çerçeve yok, CSS elle
+            yazıldı, ikonlar çizildi. Kodun tamamı GitHub'da.
+          </p>
+          <div class="dg-sira">
+            <a class="dg ikincil" href="https://github.com/berkdemir18/Ajanda"
+              >Depoyu aç</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="sar">
+        <span>Ajanda — Berk Demir</span>
+        <span class="bosluk"></span>
+        <a href="https://github.com/berkdemir18/Ajanda">GitHub</a>
+        <a href="https://github.com/berkdemir18/Ajanda/blob/main/LICENSE">MIT Lisansı</a>
+        <a href="https://github.com/berkdemir18/Ajanda/issues">Sorun bildir</a>
+      </div>
+    </footer>
+  </body>
+</html>
